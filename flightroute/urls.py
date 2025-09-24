@@ -25,4 +25,5 @@ urlpatterns = [
     path('route/',views.RoutView.as_view(),name='route'),
     path('nthnode/', views.Nhroute.as_view(), name='nthnode'),
     path('longest_route/', views.longest_route_view, name='longest_route'),
+    path('distance/', views.DistanceBtwnAiports.as_view(), name='distancebtwn'),
 ]

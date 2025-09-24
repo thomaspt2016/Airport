@@ -125,7 +125,6 @@ class Nhroute(View):
         for i in range(n_value):
             try:
                 # Find the next route from the current airport in the specified direction.
-                # It assumes there is only one route per start_airport and direction.
                 next_route = Route.objects.filter(start_airport=current_airport, direction=direction).first()
                 if next_route is None:
                     # If no route is found, handle the error gracefully.
@@ -174,6 +173,8 @@ class Nhroute(View):
             'Airp': Airp
         })
 
+
+
 def longest_route_view(request):
     # Find the single Route object with the maximum duration_minutes
     longest_route = Route.objects.order_by('-duration_minutes').first()
@@ -186,4 +187,58 @@ def longest_route_view(request):
     # Render the template, passing the context
     return render(request, 'LongestRoute.html', context)
 
+
+
+class DistanceBtwnAiports(View):
+
+    def get(self, request):
+        """
+        Handles GET requests to display the form for selecting two airports.
+        """
+        # Fetch all airports from the database to populate the dropdown menus.
+        airports = Airport.objects.all()
+
+        # Render the template with the list of airports.
+        return render(request, 'DistanceBtwnAiports.html', {'airports': airports})
+
+    def post(self, request):
+        """
+        Handles POST requests to find the shortest route between two selected airports.
+        """
+        # Get the IDs of the selected start and end airports from the form.
+        start_airport_id = request.POST.get('start_airport')
+        end_airport_id = request.POST.get('end_airport')
+        airports = Airport.objects.all()
+
+
+        # Validate that both airport IDs are present.
+        if start_airport_id==None or end_airport_id==None or start_airport_id==end_airport_id:
+            return HttpResponse("Please select both a start and an end airport.")
+        
+        if Route.objects.filter(start_airport = start_airport_id, end_airport = end_airport_id).exists():
+                return HttpResponse("A route from this airport to itself already exists.")
+
+        try:
+            routes = Route.objects.filter(Q(start_airport=start_airport_id) | Q(end_airport=end_airport_id))
+            starting = routes.first().start_airport
+            nextrout = routes.first().end_airport
+            dist = routes.first().distance_km
+            duration = routes.first().duration_minutes
+            shotrest = [{"starting":starting, "nextrout":nextrout, "dist":dist, "duration":duration}]
+            fr =True
+            while fr:
+                
+                if nextrout == end_airport_id:
+                    fr = False
+                    return render(request, 'DistanceBtwnAiports.html', {'shotrest':shotrest, 'airports': airports})
+                else:
+                    routes = Route.objects.filter(Q(start_airport=nextrout) | Q(end_airport=nextrout)).first()
+                    starting = nextrout
+                    nextrout = routes.first().end_airport
+                    dist = routes.first().distance_km
+                    duration = routes.first().duration_minutes
+        except:
+            return HttpResponse("No route found between the selected airports.")
+        print(shotrest)
+        return render(request, 'DistanceBtwnAiports.html', {'airports': airports, 'start_airport_id': start_airport_id, 'end_airport_id': end_airport_id})
 
