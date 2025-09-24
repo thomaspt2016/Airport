@@ -1,0 +1,57 @@
+{% extends 'index.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h1 class="display-4">Add Airport Route</h1>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'route' %}">
+                        {% csrf_token %}
+                        {{ airportrouteform|crispy }}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary mt-3">Add Route</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <h2 class="text-center">Existing Routes</h2>
+            <table class="table table-striped table-bordered">
+                <thead class="thead-dark">
+                    <tr>
+                        <th scope="col">Start Airport</th>
+                        <th scope="col">End Airport</th>
+                        <th scope="col">Direction</th>
+                        <th scope="col">Distance (km)</th>
+                        <th scope="col">Duration (min)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for route in routes %}
+                    <tr>
+                        <td>{{ route.start_airport }}</td>
+                        <td>{{ route.end_airport }}</td>
+                        <td>{{ route.direction }}</td>
+                        <td>{{ route.distance_km }}</td>
+                        <td>{{ route.duration_minutes }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">No routes found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

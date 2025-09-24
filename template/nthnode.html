@@ -1,0 +1,70 @@
+{% extends 'index.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header text-center bg-primary text-white">
+                    <h1 class="display-4">Find Nth Node</h1>
+                </div>
+                <div class="card-body">
+                    <!-- The form to submit the search query -->
+                    <form method="post" action="{% url 'nthnode' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="start_airport" class="form-label">Starting Airport</label>
+                            <select class="form-select" id="start_airport" name="start_airport">
+                                <option value="" selected disabled>Select an Airport</option>
+                                {% for airport in Airp %}
+                                    <option value="{{ airport.id }}">{{ airport.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="direction" class="form-label">Direction</label>
+                            <select class="form-select" id="direction" name="direction">
+                                <option value="left">Left</option>
+                                <option value="right">Right</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="n_value" class="form-label">Nth Node</label>
+                            <input type="number" class="form-control" id="n_value" name="n_value" min="1" required>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary mt-3">Search</button>
+                        </div>
+                    </form>
+
+                    <!-- Section to display the search result -->
+                    {% if fin %}
+                    <div class="alert alert-success mt-4" role="alert">
+                        <h4 class="alert-heading">Success!</h4>
+                        <p class="mb-0">The Nth node found is: <strong>{{ fin.name }} ({{ fin.code }})</strong></p>
+                    </div>
+                    
+                    <!-- New section to display the full route from the dictionary -->
+                    <div class="card mt-4">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0">Route Traversed</h5>
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            {% for key, airport in routsi.items %}
+                                <li class="list-group-item">{{ key }}: {{ airport.name }} ({{ airport.code }})</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% elif err %}
+                    <!-- This block handles the case where the route could not be found -->
+                    <div class="alert alert-warning mt-4" role="alert">
+                        <h4 class="alert-heading">Route Not Found!</h4>
+                        <p class="mb-0">{{ err }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

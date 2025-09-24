@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <title>Flight System</title>
+  </head>
+  <body>
+    <nav class="navbar navbar-light bg-light">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">Flight System</a>
+        <div class="d-flex ms-auto">
+          <a href="{% url 'home' %}" class="btn btn-outline-dark me-2" type="button">Add Airport</a>
+          <a href="{% url 'route' %}" class="btn btn-outline-dark me-2" type="button">Add Airport Route</a>
+          <div class="dropdown">
+            <button class="btn btn-outline-dark dropdown-toggle" type="button" id="searchDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              Search
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="searchDropdown">
+              <li><a class="dropdown-item" href="{% url 'nthnode' %}">Nth Node</a></li>
+              <li><a class="dropdown-item" href="{% url 'longest_route' %}">Longest Node</a></li>
+              <li><a class="dropdown-item" href="#">Shortest Node</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container mt-4">
+      {% block content %}
+      {% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+  </body>
+</html>

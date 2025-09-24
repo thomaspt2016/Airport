@@ -1,0 +1,15 @@
+
+{% extends 'index.html' %}
+
+{% block content %}
+<h1>Longest Airport Route</h1>
+{% if longest_route %}
+    <p><strong>From:</strong> {{ longest_route.start_airport.name }} ({{ longest_route.start_airport.code }})</p>
+    <p><strong>To:</strong> {{ longest_route.end_airport.name }} ({{ longest_route.end_airport.code }})</p>
+    <p><strong>Duration:</strong> {{ longest_route.duration_minutes }} minutes</p>
+    <p><strong>Distance:</strong> {{ longest_route.distance_km }} km</p>
+{% else %}
+    <p>No routes found in the database.</p>
+{% endif %}
+
+{% endblock %}
