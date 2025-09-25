@@ -189,56 +189,205 @@ def longest_route_view(request):
 
 
 
+# class DistanceBtwnAiports(View):
+
+    # def get(self, request):
+    #     """
+    #     Handles GET requests to display the form for selecting two airports.
+    #     """
+    #     # Fetch all airports from the database to populate the dropdown menus.
+    #     airports = Airport.objects.all()
+
+    #     # Render the template with the list of airports.
+    #     return render(request, 'DistanceBtwnAiports.html', {'airports': airports})
+
+    # def post(self, request):
+    #     """
+    #     Handles POST requests to find the shortest route between two selected airports.
+    #     """
+    #     # Get the IDs of the selected start and end airports from the form.
+    #     start_airport_id = request.POST.get('start_airport')
+    #     end_airport_id = request.POST.get('end_airport')
+    #     airports = Airport.objects.all()
+
+
+    #     # Validate that both airport IDs are present.
+    #     if start_airport_id==None or end_airport_id==None or start_airport_id==end_airport_id:
+    #         return HttpResponse("Please select both a start and an end airport.")
+        
+    #     if Route.objects.filter(start_airport = start_airport_id, end_airport = end_airport_id).exists():
+    #             return HttpResponse("A route from this airport to itself already exists.")
+
+    #     try:
+    #         startingcount = Route.objects.filter(start_airport=start_airport_id).count()
+    #         routes = Route.objects.filter(Q(start_airport=start_airport_id) | Q(end_airport=end_airport_id))
+    #         Endf = Airport.objects.get(id__in=end_airport_id)
+    #         starting = routes.first().start_airport
+    #         nextrout = routes.first().end_airport
+    #         dist = routes.first().distance_km
+    #         duration = routes.first().duration_minutes
+    #         shotrest = []
+    #         if routes.exists():
+    #                 fr =True
+    #                 while fr:
+    #                     if nextrout == Endf:
+    #                         shotrest.append({'From':starting, 'Distance':dist, 'Duration':duration, 'To':nextrout})
+    #                         fr = False
+    #                         return render(request, 'DistanceBtwnAiports.html', {'airports': airports,'shortest_route': shotrest})
+    #                     else:
+    #                         shotrest.append({'From':starting,'Distance':dist,'Duration':duration,'To':nextrout})
+    #                         routes = Route.objects.filter(Q(start_airport=nextrout)).first()
+    #                         starting =routes.start_airport
+    #                         nextrout = routes.end_airport
+    #                         dist = routes.distance_km
+    #                         duration = routes.duration_minutes
+    #     except:
+    #         return HttpResponse("No route found between the selected airports.")
+    #     return render(request, 'DistanceBtwnAiports.html', {'airports': airports, 'start_airport_id': start_airport_id, 'end_airport_id': end_airport_id})
+
 class DistanceBtwnAiports(View):
+    """
+    View to find the shortest route between two selected airports using Dijkstra's algorithm.
+    """
 
     def get(self, request):
         """
         Handles GET requests to display the form for selecting two airports.
         """
-        # Fetch all airports from the database to populate the dropdown menus.
-        airports = Airport.objects.all()
+        # Fetch all airports to populate the dropdown menus.
+        # Order by name for better user experience.
+        airports = Airport.objects.all().order_by('name')
 
         # Render the template with the list of airports.
         return render(request, 'DistanceBtwnAiports.html', {'airports': airports})
+
+    def _dijkstra(self, start_id, end_id):
+        """
+        Dijkstra's algorithm to find the shortest path (by distance) between two airports.
+        Returns a dictionary with the route details or None if no path exists.
+        """
+        # Fetch all relevant data once
+        all_airports = Airport.objects.all()
+        all_routes = Route.objects.all().select_related('start_airport', 'end_airport')
+
+        # Map ID to Airport object
+        airport_map = {a.id: a for a in all_airports}
+
+        # Initialize Dijkstra's variables
+        distances = {a.id: float('inf') for a in all_airports}
+        predecessors = {a.id: None for a in all_airports}
+        routes_to_predecessor = {} # Stores the Route object for the path segment
+        unvisited = {a.id for a  in all_airports}
+
+        distances[start_id] = 0
+
+        # Create an adjacency list (graph)
+        adj = {a.id: [] for a in all_airports}
+        for route in all_routes:
+            adj[route.start_airport_id].append(route)
+
+        while unvisited:
+            # Find the unvisited airport with the smallest distance
+            # Using a simple list comprehension for min key for simplicity over a min-heap
+            if not unvisited:
+                break
+                
+            current_id = min(unvisited, key=lambda id: distances.get(id, float('inf')))
+
+            if distances.get(current_id) == float('inf'):
+                break # All reachable nodes are processed
+
+            unvisited.remove(current_id)
+
+            if current_id == end_id:
+                break # Found the shortest path
+
+            # Check neighbors
+            for route in adj.get(current_id, []):
+                neighbor_id = route.end_airport_id
+                weight = route.distance_km
+
+                new_distance = distances[current_id] + weight
+
+                if new_distance < distances[neighbor_id]:
+                    distances[neighbor_id] = new_distance
+                    predecessors[neighbor_id] = current_id
+                    routes_to_predecessor[neighbor_id] = route # Store the actual route segment
+
+        # --- Path Reconstruction and Formatting ---
+
+        if distances[end_id] == float('inf'):
+            return None # No path found
+
+        total_distance = distances[end_id]
+        total_duration = 0
+        current_step = end_id
+        path_segments = []
+
+        # Trace back the path and calculate total duration
+        while predecessors[current_step] is not None:
+            predecessor_id = predecessors[current_step]
+            route_segment = routes_to_predecessor[current_step]
+            
+            total_duration += route_segment.duration_minutes
+            
+            # This segment can be used for detailed path display later, but is ignored for the current template
+            path_segments.insert(0, route_segment) 
+            
+            current_step = predecessor_id
+
+        # Format the result to match the template's expected 'shortest_route' dictionary keys
+        return {
+            'start_airport': airport_map.get(start_id),
+            'end_airport': airport_map.get(end_id),
+            'duration_minutes': total_duration,
+            'distance_km': total_distance,
+            # Optional: 'path_segments': path_segments 
+        }
 
     def post(self, request):
         """
         Handles POST requests to find the shortest route between two selected airports.
         """
-        # Get the IDs of the selected start and end airports from the form.
         start_airport_id = request.POST.get('start_airport')
         end_airport_id = request.POST.get('end_airport')
-        airports = Airport.objects.all()
+        airports = Airport.objects.all().order_by('name')
 
-
-        # Validate that both airport IDs are present.
-        if start_airport_id==None or end_airport_id==None or start_airport_id==end_airport_id:
-            return HttpResponse("Please select both a start and an end airport.")
-        
-        if Route.objects.filter(start_airport = start_airport_id, end_airport = end_airport_id).exists():
-                return HttpResponse("A route from this airport to itself already exists.")
+        # --- Validation ---
+        if not start_airport_id or not end_airport_id:
+            return render(request, 'DistanceBtwnAiports.html', {
+                'airports': airports,
+                'error': "Please select both a start and an end airport."
+            })
 
         try:
-            routes = Route.objects.filter(Q(start_airport=start_airport_id) | Q(end_airport=end_airport_id))
-            starting = routes.first().start_airport
-            nextrout = routes.first().end_airport
-            dist = routes.first().distance_km
-            duration = routes.first().duration_minutes
-            shotrest = []
-            fr =True
-            while fr:
+            start_id = int(start_airport_id)
+            end_id = int(end_airport_id)
+        except ValueError:
+             return render(request, 'DistanceBtwnAiports.html', {
+                'airports': airports,
+                'error': "Invalid airport selection."
+            })
+        
+        if start_id == end_id:
+            return render(request, 'DistanceBtwnAiports.html', {
+                'airports': airports,
+                'error': "Start and End airports must be different."
+            })
 
-                if nextrout == end_airport_id:
-                    fr = False
-                    return render(request, 'DistanceBtwnAiports.html', {'shotrest':shotrest, 'airports': airports})
-                else:
-                    starting = nextrout
-                    nextrout = routes.first().end_airport
-                    dist = routes.first().distance_km
-                    duration = routes.first().duration_minutes
-                    shotrest.append({"starting":starting, "nextrout":nextrout, "dist":dist, "duration":duration})
-        except:
-            return HttpResponse("No route found between the selected airports.")
-        print(shotrest)
-        return render(request, 'DistanceBtwnAiports.html', {'airports': airports, 'start_airport_id': start_airport_id, 'end_airport_id': end_airport_id})
+        # --- Pathfinding ---
+        shortest_route_data = self._dijkstra(start_id, end_id)
 
+        # --- Rendering Result ---
+        if shortest_route_data:
+            # Successfully found a route (may be multi-stop)
+            return render(request, 'DistanceBtwnAiports.html', {
+                'airports': airports,
+                'shortest_route': shortest_route_data
+            })
+        else:
+            # No path exists
+            return render(request, 'DistanceBtwnAiports.html', {
+                'airports': airports,
+                'error': "No route found between the selected airports."
+            })
