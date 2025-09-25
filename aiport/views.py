@@ -218,27 +218,27 @@ class DistanceBtwnAiports(View):
         if Route.objects.filter(start_airport = start_airport_id, end_airport = end_airport_id).exists():
                 return HttpResponse("A route from this airport to itself already exists.")
 
-        # try:
-        #     routes = Route.objects.filter(Q(start_airport=start_airport_id) | Q(end_airport=end_airport_id))
-        #     starting = routes.first().start_airport
-        #     nextrout = routes.first().end_airport
-        #     dist = routes.first().distance_km
-        #     duration = routes.first().duration_minutes
-        #     shotrest = [{"starting":starting, "nextrout":nextrout, "dist":dist, "duration":duration}]
-        #     fr =True
-        #     while fr:
+        try:
+            routes = Route.objects.filter(Q(start_airport=start_airport_id) | Q(end_airport=end_airport_id))
+            starting = routes.first().start_airport
+            nextrout = routes.first().end_airport
+            dist = routes.first().distance_km
+            duration = routes.first().duration_minutes
+            shotrest = []
+            fr =True
+            while fr:
 
-        #         if nextrout == end_airport_id:
-        #             fr = False
-        #             return render(request, 'DistanceBtwnAiports.html', {'shotrest':shotrest, 'airports': airports})
-        #         else:
-        #             routes = Route.objects.filter(Q(start_airport=nextrout) | Q(end_airport=nextrout)).first()
-        #             starting = nextrout
-        #             nextrout = routes.first().end_airport
-        #             dist = routes.first().distance_km
-        #             duration = routes.first().duration_minutes
-        # except:
-        #     return HttpResponse("No route found between the selected airports.")
-        # print(shotrest)
+                if nextrout == end_airport_id:
+                    fr = False
+                    return render(request, 'DistanceBtwnAiports.html', {'shotrest':shotrest, 'airports': airports})
+                else:
+                    starting = nextrout
+                    nextrout = routes.first().end_airport
+                    dist = routes.first().distance_km
+                    duration = routes.first().duration_minutes
+                    shotrest.append({"starting":starting, "nextrout":nextrout, "dist":dist, "duration":duration})
+        except:
+            return HttpResponse("No route found between the selected airports.")
+        print(shotrest)
         return render(request, 'DistanceBtwnAiports.html', {'airports': airports, 'start_airport_id': start_airport_id, 'end_airport_id': end_airport_id})
 
